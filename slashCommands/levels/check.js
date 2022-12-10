@@ -14,24 +14,59 @@ module.exports = {
             })
 
             res.on('end', () => {
-                // const data = new EmbedBuilder()
-                //     .setTitle('Response')
-                //     .setDescription()
-                //     .setColor('#294363')
-                //     .setFooter({
-                //         text: `Requested by ${interaction.user.username}`,
-                //         iconURL: interaction.user.displayAvatarURL()
-                //     })
-                //     .setTimestamp()     
                 data = JSON.parse(data)
                 let users = []
+                let updatedusers = []
 
                 for (let i = 0; i < data.players.length; i++) {
                     let player = data.players[i]
-                    users.push(`${player.username}'s level is ${player.level % 5 == 0 ? 'not ' : ''}a multiple of 5 (${player.level})`)
+                    if (player.level % 5 == 0) users.push(player)
                 }
 
-                interaction.reply(users.join('\n').slice(0, 1997) + '...')
+                for (let i = 0; i < users.length; i++) {
+                    try {
+                        if (interaction.guild.members.cache.find(member => member.id == users[i].id).roles.cache.some(role => role.name == 'Level ' + users[i].level)) delete users[i]
+                    } catch { delete users[i] }
+                }
+                
+                const updated = new EmbedBuilder()
+                    .setTitle('Updated Users')
+                    .setColor('#294363')
+                    .setFooter({
+                        text: `Requested by ${interaction.user.username}`,
+                        iconURL: interaction.user.displayAvatarURL()
+                    })
+                    .setTimestamp() 
+
+                const empty = new EmbedBuilder()
+                    .setTitle('No Users to Update!')
+                    .setColor('#294363')
+                    .setFooter({
+                        text: `Requested by ${interaction.user.username}`,
+                        iconURL: interaction.user.displayAvatarURL()
+                    })
+                    .setTimestamp() 
+
+                let _empty = true
+
+                users.forEach(u => {
+                    if (u != undefined) {
+                        let user = interaction.guild.members.cache.find(member => member.id == u.id)
+                        let role = interaction.guild.roles.cache.find(role => role.name == 'Level ' + u.level)
+                        user.roles.add(role)
+                        try { user.roles.remove(interaction.guild.roles.cache.find(role => role.name == 'Level ' + (u.level - 5))) } catch { }
+                        console.log(u)
+                        updated.addFields({
+                            name: u.username,
+                            value: 'Level '+(u.level - 5)+' -> Level '+u.level
+                        })
+
+                        _empty = false
+                    }
+                })  
+
+                if (_empty) interaction.reply({ embeds: [empty] })
+                else interaction.reply({ embeds: [updated] })
             })
         })
 	}
