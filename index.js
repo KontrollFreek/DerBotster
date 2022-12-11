@@ -9,7 +9,8 @@ const client = new Client({
 		GatewayIntentBits.DirectMessages,
 		GatewayIntentBits.MessageContent
 	], 
-	partials: [Partials.Channel, Partials.Message, Partials.User, Partials.GuildMember, Partials.Reaction]
+	partials: [Partials.Channel, Partials.Message, Partials.User, Partials.GuildMember, Partials.Reaction],
+	ws: { properties: { browser: 'Discord iOS' } }
 });
 
 const config = require('./config.json');
