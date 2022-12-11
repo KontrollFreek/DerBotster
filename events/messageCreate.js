@@ -1,62 +1,43 @@
-const { EmbedBuilder, Collection, PermissionsBitField } = require('discord.js')
-const ms = require('ms');
+const { EmbedBuilder } = require('discord.js');
 const client = require('..');
-const config = require('../config.json');
-
-const prefix = client.prefix;
-const cooldown = new Collection();
+const https = require('https');
 
 client.on('messageCreate', async message => {
-	if(message.author.bot) return;
-	if(message.channel.type !== 0) return;
-	if(!message.content.startsWith(prefix)) return; 
-	const args = message.content.slice(prefix.length).trim().split(/ +/g); 
-	const cmd = args.shift().toLowerCase();
-	if(cmd.length == 0 ) return;
-	let command = client.commands.get(cmd)
-	if(!command) command = client.commands.get(client.aliases.get(cmd));
-	
-	if(command) {
-		if(command.cooldown) {
-				if(cooldown.has(`${command.name}${message.author.id}`)) return message.channel.send({ content: config.messages["COOLDOWN_MESSAGE"].replace('<duration>', ms(cooldown.get(`${command.name}${message.author.id}`) - Date.now(), {long : true}) ) });
-				if(command.userPerms || command.botPerms) {
-					if(!message.member.permissions.has(PermissionsBitField.resolve(command.userPerms || []))) {
-						const userPerms = new EmbedBuilder()
-						.setDescription(`🚫 ${message.author}, You don't have \`${command.userPerms}\` permissions to use this command!`)
-						.setColor('Red')
-						return message.reply({ embeds: [userPerms] })
-					}
-					if(!message.guild.members.cache.get(client.user.id).permissions.has(PermissionsBitField.resolve(command.botPerms || []))) {
-						const botPerms = new EmbedBuilder()
-						.setDescription(`🚫 ${message.author}, I don't have \`${command.botPerms}\` permissions to use this command!`)
-						.setColor('Red')
-						return message.reply({ embeds: [botPerms] })
-					}
-				}
+	if (message.guild.id != '450404248635703296') return
+	https.get('https://mee6.xyz/api/plugins/levels/leaderboard/450404248635703296', res => {
+		let data = ''
 
-				command.run(client, message, args)
-				cooldown.set(`${command.name}${message.author.id}`, Date.now() + command.cooldown)
-				setTimeout(() => {
-					cooldown.delete(`${command.name}${message.author.id}`)
-				}, command.cooldown);
-			} else {
-				if(command.userPerms || command.botPerms) {
-					if(!message.member.permissions.has(PermissionsBitField.resolve(command.userPerms || []))) {
-						const userPerms = new EmbedBuilder()
-						.setDescription(`🚫 ${message.author}, You don't have \`${command.userPerms}\` permissions to use this command!`)
-						.setColor('Red')
-						return message.reply({ embeds: [userPerms] })
+		res.on('data', c => {
+			data += c
+		})
+
+		res.on('end', () => {
+			data = JSON.parse(data)
+			message.guild.members.fetch()
+				.then(() => {
+					let users = []
+
+					for (let i = 0; i < data.players.length; i++) {
+						let player = data.players[i]
+						if (player.level % 5 == 0) users.push(player)
 					}
-				
-					if(!message.guild.members.cache.get(client.user.id).permissions.has(PermissionsBitField.resolve(command.botPerms || []))) {
-						const botPerms = new EmbedBuilder()
-						.setDescription(`🚫 ${message.author}, I don't have \`${command.botPerms}\` permissions to use this command!`)
-						.setColor('Red')
-						return message.reply({ embeds: [botPerms] })
+
+					for (let i = 0; i < users.length; i++) {
+						try {
+							if (message.guild.members.cache.find(member => member.id == users[i].id).roles.cache.some(role => role.name == 'Level ' + users[i].level)) delete users[i]
+						} catch { delete users[i] }
 					}
-			}
-			command.run(client, message, args)
-		}
-	}
-	
+
+					users.forEach(u => {
+						if (u != undefined) {
+							let user = message.guild.members.cache.find(member => member.id == u.id)
+							let role = message.guild.roles.cache.find(role => role.name == 'Level ' + u.level)
+							user.roles.add(role)
+							try { user.roles.remove(message.guild.roles.cache.find(role => role.name == 'Level ' + (u.level - 5))) } catch { }
+							console.log(u)
+						}
+					})
+				})
+		})
+	})
 });
