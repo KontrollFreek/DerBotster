@@ -11,33 +11,31 @@ client.on('messageCreate', async message => {
 			data += c
 		})
 
-		res.on('end', () => {
+		res.on('end', async () => {
 			data = JSON.parse(data)
-			message.guild.members.fetch()
-				.then(() => {
-					let users = []
+			await message.guild.members.fetch()
+			let users = []
 
-					for (let i = 0; i < data.players.length; i++) {
-						let player = data.players[i]
-						if (player.level % 5 == 0) users.push(player)
-					}
+			for (let i = 0; i < data.players.length; i++) {
+				let player = data.players[i]
+				if (player.level % 5 == 0) users.push(player)
+			}
 
-					for (let i = 0; i < users.length; i++) {
-						try {
-							if (message.guild.members.cache.find(member => member.id == users[i].id).roles.cache.some(role => role.name == 'Level ' + users[i].level)) delete users[i]
-						} catch { delete users[i] }
-					}
+			for (let i = 0; i < users.length; i++) {
+				try {
+					if (message.guild.members.cache.find(member => member.id == users[i].id).roles.cache.some(role => role.name == 'Level ' + users[i].level)) delete users[i]
+				} catch { delete users[i] }
+			}
 
-					users.forEach(u => {
-						if (u != undefined) {
-							let user = message.guild.members.cache.find(member => member.id == u.id)
-							let role = message.guild.roles.cache.find(role => role.name == 'Level ' + u.level)
-							user.roles.add(role)
-							try { user.roles.remove(message.guild.roles.cache.find(role => role.name == 'Level ' + (u.level - 5))) } catch { }
-							console.log(u)
-						}
-					})
-				})
+			users.forEach(u => {
+				if (u != undefined) {
+					let user = message.guild.members.cache.find(member => member.id == u.id)
+					let role = message.guild.roles.cache.find(role => role.name == 'Level ' + u.level)
+					user.roles.add(role)
+					try { user.roles.remove(message.guild.roles.cache.find(role => role.name == 'Level ' + (u.level - 5))) } catch { }
+					console.log(u)
+				}
+			})
 		})
 	})
 });
