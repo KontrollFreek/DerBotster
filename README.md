@@ -1,6 +1,6 @@
-# DerServer
+# DerBotster
 
-This is DerServer, a Discord bot for the DerServer by DerModster. This bot is currently in development, being developed by KontrollFreek#0643 and Catster ♡#1000
+This is DerBotster, a Discord bot for the DerServer by DerModster. This bot is currently in development, being developed by KontrollFreek#0643 and Catster ♡#1000
 This is the Source Code for the bot, so you know how everything works.
 
 # REMINDER
